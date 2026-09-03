@@ -1,0 +1,24 @@
+# Python 字节码 / 缓存
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 打包产物
+dist/
+build/
+
+# 环境变量（含数据库凭据，严禁提交）
+.env
+
+# MCP 客户端本地配置（含路径与凭据，提交前请替换为占位值）
+.mcp.json
+mcp.json
+
+# WorkBuddy工作目录
+.workbuddy/

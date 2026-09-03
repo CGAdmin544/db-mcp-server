@@ -1,0 +1,26 @@
+[project]
+name = "oracle-mcp-server"
+version = "0.1.0"
+description = "一个用于连接 Oracle 数据库并提供 MCP 工具的服务器"
+readme = "README.md"
+requires-python = ">=3.10"
+# 核心依赖：MCP 协议库 + Oracle 驱动 + 环境变量加载
+# 注意：PyPI 上的正确包名是 oracledb（python-oracledb 是产品名，PyPI 无此包名）；
+# mcp 锁定 <2（2.x 已将 FastMCP 重命名为 MCPServer，API 不兼容）
+dependencies = [
+    "mcp>=1.2.0,<2",
+    "oracledb>=2.4.0",
+    "python-dotenv>=1.0.0",
+]
+
+# 安装后可执行的命令入口（pip install -e . 后可用 oracle-mcp-server 启动）
+[project.scripts]
+oracle-mcp-server = "server:main"
+
+# 构建后端：使用 setuptools，将根目录下的 server.py / database.py 作为顶层模块打包
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["server", "database"]
