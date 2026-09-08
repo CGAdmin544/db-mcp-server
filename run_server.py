@@ -1,4 +1,4 @@
-"""Oracle MCP 服务器启动脚本。
+"""多数据库 MCP 服务器启动脚本。
 
 提供比 `python server.py` 更完善的启动入口：
 - 打印启动横幅与当前生效配置（脱敏后）；
@@ -19,18 +19,31 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# 必需的环境变量清单：缺一不可启动
-_REQUIRED_KEYS = (
-    "ORACLE_USER",
-    "ORACLE_PASSWORD",
-    "ORACLE_HOST",
-    "ORACLE_SERVICE_NAME",
-)
+
+def _required_keys() -> list:
+    """根据连接配置计算必需的环境变量清单。
+
+    规则：
+    - 若设置了 DATABASE_URL，URL 已自包含，不强制其它变量；
+    - 否则按 DB_TYPE 决定：oracle 兼容 ORACLE_* 与 DB_* 混用，其余库要求 DB_USER/PASSWORD/HOST/NAME。
+    """
+    if os.getenv("DATABASE_URL"):
+        return []
+    db_type = (os.getenv("DB_TYPE") or os.getenv("DATABASE_TYPE") or "oracle").lower()
+    if db_type == "sqlite":
+        return []  # sqlite 仅需 DB_NAME（文件路径）或 DATABASE_URL
+    if db_type == "oracle":
+        # 兼容历史：只要 ORACLE 三件套齐全即可；否则要求 DB_* 拆分字段
+        if os.getenv("ORACLE_USER") and os.getenv("ORACLE_HOST") and os.getenv("ORACLE_SERVICE_NAME"):
+            return ["ORACLE_PASSWORD"]
+        return ["DB_USER", "DB_PASSWORD", "DB_HOST", "DB_NAME"]
+    # sqlserver / mysql / postgres
+    return ["DB_USER", "DB_PASSWORD", "DB_HOST", "DB_NAME"]
 
 
 def precheck() -> None:
     """启动前校验必需环境变量，缺失时打印缺失项并退出（exit code 1）。"""
-    missing = [k for k in _REQUIRED_KEYS if not os.getenv(k)]
+    missing = [k for k in _required_keys() if not os.getenv(k)]
     if missing:
         print("启动失败：缺少必需的环境变量：", file=sys.stderr)
         for key in missing:
@@ -42,14 +55,26 @@ def precheck() -> None:
         sys.exit(1)
 
 
+def _db_type() -> str:
+    return (os.getenv("DB_TYPE") or os.getenv("DATABASE_TYPE") or "oracle").lower()
+
+
 def print_banner() -> None:
     """打印启动横幅与脱敏后的配置摘要（密码只显示是否已设置）。"""
-    mode = os.getenv("ORACLE_MODE", "readonly")
+    db_type = _db_type()
+    mode = os.getenv("DB_MODE", os.getenv("ORACLE_MODE", "readonly"))
+    # 目标库展示：优先 DB_*，Oracle 回退到 ORACLE_*
+    user = os.getenv("DB_USER") or os.getenv("ORACLE_USER") or "?"
+    host = os.getenv("DB_HOST") or os.getenv("ORACLE_HOST") or "localhost"
+    port = os.getenv("DB_PORT") or os.getenv("ORACLE_PORT") or ""
+    name = os.getenv("DB_NAME") or os.getenv("ORACLE_SERVICE_NAME") or ""
     print("=" * 56, file=sys.stderr)
-    print("  Oracle MCP Server (stdio)", file=sys.stderr)
-    print(f"  目标库   : {os.getenv('ORACLE_USER')}@{os.getenv('ORACLE_HOST')}:{os.getenv('ORACLE_PORT', '1521')}/{os.getenv('ORACLE_SERVICE_NAME')}", file=sys.stderr)
+    print("  多数据库 MCP Server (stdio)", file=sys.stderr)
+    print(f"  数据库类型 : {db_type}", file=sys.stderr)
+    print(f"  目标库   : {user}@{host}:{port}/{name}", file=sys.stderr)
     print(f"  访问模式 : {mode}" + ("  (只读，禁止 DML)" if mode == "readonly" else "  (读写，允许 DML)"), file=sys.stderr)
-    print(f"  密码     : {'已设置' if os.getenv('ORACLE_PASSWORD') else '未设置!'}", file=sys.stderr)
+    pw = os.getenv("DB_PASSWORD") or os.getenv("ORACLE_PASSWORD")
+    print(f"  密码     : {'已设置' if pw else '未设置!'}", file=sys.stderr)
     print("=" * 56, file=sys.stderr)
 
 

@@ -1,17 +1,31 @@
 [project]
 name = "oracle-mcp-server"
-version = "0.1.0"
-description = "一个用于连接 Oracle 数据库并提供 MCP 工具的服务器"
+version = "0.2.0"
+description = "一个支持 Oracle / SQL Server / MySQL / PostgreSQL / SQLite 的多数据库 MCP 服务器"
 readme = "README.md"
 requires-python = ">=3.10"
-# 核心依赖：MCP 协议库 + Oracle 驱动 + 环境变量加载
-# 注意：PyPI 上的正确包名是 oracledb（python-oracledb 是产品名，PyPI 无此包名）；
-# mcp 锁定 <2（2.x 已将 FastMCP 重命名为 MCPServer，API 不兼容）
+# 核心依赖：MCP 协议库 + SQLAlchemy 统一抽象层 + 各数据库驱动 + 环境变量加载
+# 注意：
+# - PyPI 上的 Oracle 驱动包名是 oracledb（python-oracledb 是产品名，PyPI 无此包名）；
+# - mcp 锁定 <2（2.x 已将 FastMCP 重命名为 MCPServer，API 不兼容）；
+# - 各驱动可按需裁剪（见下方 [project.optional-dependencies]）。
 dependencies = [
     "mcp>=1.2.0,<2",
+    "sqlalchemy>=2.0.0",
     "oracledb>=2.4.0",
+    "pyodbc>=5.0.0",
+    "pymysql>=1.1.0",
+    "psycopg2-binary>=2.9.0",
     "python-dotenv>=1.0.0",
 ]
+
+# 可选依赖分组：若只想连接其中一种数据库，可只装对应驱动，例如
+# pip install -e ".[mysql]" 或 pip install ".[mssql,postgres]"
+[project.optional-dependencies]
+oracle = ["oracledb>=2.4.0"]
+mssql = ["pyodbc>=5.0.0"]
+mysql = ["pymysql>=1.1.0"]
+postgres = ["psycopg2-binary>=2.9.0"]
 
 # 安装后可执行的命令入口（pip install -e . 后可用 oracle-mcp-server 启动）
 [project.scripts]

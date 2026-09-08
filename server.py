@@ -1,6 +1,7 @@
-"""Oracle MCP 服务器主入口。
+"""多数据库 MCP 服务器主入口。
 
-本模块使用 FastMCP（mcp 库的高层 API）将 Oracle 数据库操作封装为 MCP 工具，
+本模块使用 FastMCP（mcp 库的高层 API）将数据库操作封装为 MCP 工具，
+支持 Oracle / SQL Server / MySQL / PostgreSQL / SQLite（由 database 层用 SQLAlchemy 抽象），
 通过标准输入/输出（stdio）传输与 MCP 客户端通信（如 Claude Desktop、WorkBuddy 等）。
 
 设计要点：
@@ -72,10 +73,10 @@ def execute_query(sql: str, schemaName: Optional[str] = None) -> str:
 
 @mcp.tool()
 def list_tables(schema: Optional[str] = None) -> str:
-    """列出数据库中的表；指定 schema 时仅列出该模式下的表。
+    """列出数据库中的表；指定 schema 时仅列出该命名空间下的表。
 
     Args:
-        schema: 目标用户名（不区分大小写）；不传则列出当前用户的表。
+        schema: 目标 schema/数据库名（不区分大小写）；不传则列出当前默认命名空间下的表。
     """
     try:
         rows = database.list_tables(schema)
@@ -90,8 +91,9 @@ def describe_table(table_name: str, schemaName: Optional[str] = None) -> str:
     """查看表结构：列名、数据类型、是否可为空。
 
     Args:
-        table_name: 表名（不区分大小写，内部转大写匹配）。
-        schemaName: 限定所属 schema（用户名）；不传则匹配所有 schema 中同名表。
+        table_name: 表名。
+        schemaName: 限定所属 schema（Oracle 为 owner，PostgreSQL 为 schema，
+                    MySQL/SQL Server 为数据库名）；不传则匹配默认命名空间中的表。
     """
     try:
         if not table_name or not table_name.strip():
