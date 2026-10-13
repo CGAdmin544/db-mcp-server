@@ -1,3 +1,4 @@
+[![M8ven Score](https://m8ven.ai/badge/mcp/cgadmin544-db-mcp-server-6fgmcs?v=f822a122caa58f11a0eee67947013ed3)](https://m8ven.ai/mcp/cgadmin544-db-mcp-server-6fgmcs?s=readme)
 # 多数据库 MCP Server
 
 一个支持 **Oracle / SQL Server / MySQL / PostgreSQL / SQLite** 的 MCP（Model Context Protocol）服务器。底层用 SQLAlchemy 2.x 作为统一抽象层，把常用数据库操作封装为 MCP 工具，供 Claude Desktop、WorkBuddy 等 MCP 客户端调用。接口与原 Oracle 版完全兼容（`execute_query` / `list_tables` / `describe_table` / `test_connection`），原有仅配置 `ORACLE_*` 的旧环境无需改动即可继续工作。
